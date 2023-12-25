@@ -1,5 +1,9 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using LethalLib.Modules;
+using System.IO;
+using System.Reflection;
+using UnityEngine;
 
 namespace LethalCompanyTemplate
 {
@@ -12,7 +16,7 @@ namespace LethalCompanyTemplate
         const string NAME = "Cleaning Company";
         const string VERSION = "0.0.1";
 
-        Assetbundle bundle;
+        AssetBundle bundle;
 
 
         void Awake()
@@ -32,12 +36,14 @@ namespace LethalCompanyTemplate
                 }
             }
 
-            string assetDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "CleaningAssets");
+            string assetDir = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "cleaningassets");
             bundle = AssetBundle.LoadFromFile(assetDir);
 
             SetupItems();
             SetupScrap();
 
+
+            harmony.PatchAll();
             Logger.LogInfo($"Cleaning Company is patched!");
         }
 
@@ -58,13 +64,14 @@ namespace LethalCompanyTemplate
 
         void SetupScrap()
         {
-            /* EXAMPLE
-            Item garbageBag = bundle.loadAsset<Item>("Assets/CleaningAssets/GarbageBag.asset");
-            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(garbageBag.spawnPrefab);
+            Item test = bundle.LoadAsset<Item>("Assets/CleaningAssets/TestMessItem.asset");
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(test.spawnPrefab);
+            Items.RegisterScrap(test, 100, Levels.LevelTypes.All);
+            Items.RegisterShopItem(test,0);
 
             // load and and apply cleaning sfx too.
 
-            Item brackenDust = bundle.loadAsset<Item>("Assets/CleaningAssets/BroomScrap.asset");
+            /*Item brackenDust = bundle.loadAsset<Item>("Assets/CleaningAssets/BroomScrap.asset");
             MessScript brackScript = scrap.AddComponent<MessScript>();
             brackScript.itemProperties = brackenDust;
             brackScript.toolName = "Broom";
