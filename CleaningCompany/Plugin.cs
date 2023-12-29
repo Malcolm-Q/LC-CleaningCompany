@@ -4,7 +4,6 @@ using HarmonyLib;
 using LethalLib.Extras;
 using LethalLib.Modules;
 using System.Collections.Generic;
-using System.ComponentModel.Design.Serialization;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
@@ -31,10 +30,29 @@ namespace CleaningCompany
             { root+"CentipedeItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(0.25f,0), new Keyframe(1,3)) },
         };
 
+        Dictionary<string,string> pathToName = new Dictionary<string, string>()
+        {
+            { root+"ScavItem.asset", "IgnoreThis" },
+            { root+"HoarderItem.asset", "Hoarding bug" },
+            { root+"SpiderItem.asset", "Bunker Spider" },
+            { root+"ThumperItem.asset", "Crawler" },
+            { root+"CentipedeItem.asset", "Centipede"},
+            { root+"BrackenDustItem.asset", "Flowerman"},
+        };
+
         Dictionary<string, string> messPaths = new Dictionary<string, string>()
         {
-            { root+"MessLootTest.asset", "mop" },
+            { root+"ThumperDroolItem.asset", "mop" },
+            { root+"SporePileItem.asset", "vacuum" },
+            { root+"EtherealItem.asset", "vacuum" },
+            { root+"ScavGoopItem.asset", "mop" },
+            { root+"BrackenDustItem.asset", "broom"},
+            { root+"NailPileItem.asset", "broom"},
+            { root+"HoardingEggItem.asset", "garbage"},
+            { root+"BonesItem.asset", "garbage"},
         };
+
+        public Dictionary<string, Item> BodySpawns = new Dictionary<string, Item>();
 
         AssetBundle bundle;
         public Texture2D janitorMat;
@@ -67,6 +85,7 @@ namespace CleaningCompany
 
             harmony.PatchAll();
             Logger.LogInfo($"Cleaning Company is patched!");
+            Logger.LogInfo(string.Join(", ",BodySpawns.Keys));
         }
 
 
@@ -135,11 +154,20 @@ namespace CleaningCompany
             AudioClip mopSound = bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/mop.mp3");
 
             sfx.Add("mop", mopSound);
+            sfx.Add("vacuum", mopSound);
+            sfx.Add("broom", mopSound);
+            sfx.Add("garbage", mopSound);
 
             Dictionary<string, Item> trash = new Dictionary<string, Item>();
-            Item trashTest = bundle.LoadAsset<Item>("Assets/CleaningAssets/MessLootTest.asset");
+            Item trashBag = bundle.LoadAsset<Item>("Assets/CleaningAssets/GarbageBagItem.asset");
+            Item bucket = bundle.LoadAsset<Item>("Assets/CleaningAssets/BucketItem.asset");
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(trashBag.spawnPrefab);
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(bucket.spawnPrefab);
 
-            trash.Add("mop", trashTest);
+            trash.Add("mop", bucket);
+            trash.Add("vacuum", trashBag);
+            trash.Add("broom", trashBag);
+            trash.Add("garbage", trashBag);
 
 
             foreach(KeyValuePair<string,string> bundleData in messPaths)
@@ -152,7 +180,11 @@ namespace CleaningCompany
                 mess.cleanNoise = sfx[bundleData.Value];
 
                 LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(item.spawnPrefab);
-                Items.RegisterScrap(item, 100, Levels.LevelTypes.All);
+                Items.RegisterScrap(item, 50, Levels.LevelTypes.All);
+                if (bundleData.Key.Contains("Bracken"))
+                {
+                    BodySpawns.Add("Flowerman", item);
+                }
             }
 
             foreach(KeyValuePair<string, AnimationCurve> pair in bodyPaths)
@@ -165,6 +197,8 @@ namespace CleaningCompany
                 mapObjDef.spawnableMapObject.prefabToSpawn = body.spawnPrefab;
                 MapObjects.RegisterMapObject(mapObjDef, Levels.LevelTypes.All,(level) => pair.Value);
                 Items.RegisterItem(body);
+
+                BodySpawns.Add(pathToName[pair.Key], body);
             }
         }
     }

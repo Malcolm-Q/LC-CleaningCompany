@@ -44,4 +44,8 @@
         <HintPath>D:\SteamLibrary\steamapps\common\Lethal Company\Lethal Company_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       </Reference>
     </ItemGroup>
+
+    <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+      <Exec Command="cd ..\UnityNetcodeWeaver&#xD;&#xA;NetcodePatcher.dll $(TargetDir) deps/" />
+    </Target>
 </Project>
