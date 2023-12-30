@@ -1,4 +1,6 @@
 ﻿using BepInEx;
+using BepInEx.Configuration;
+using CleaningCompany.Misc;
 using CleaningCompany.Monos;
 using HarmonyLib;
 using LethalLib.Extras;
@@ -17,19 +19,16 @@ namespace CleaningCompany
         readonly Harmony harmony = new Harmony(GUID);
         const string GUID = "malco.cleaning_company";
         const string NAME = "Cleaning Company";
-        const string VERSION = "0.0.1";
+        const string VERSION = "1.0.0";
 
         static string root = "Assets/CleaningAssets/";
 
-        Dictionary<string,AnimationCurve> bodyPaths = new Dictionary<string, AnimationCurve>()
-        {
-            { root+"ScavItem.asset", new AnimationCurve(new Keyframe(0,1), new Keyframe(1,4)) },
-            { root+"HoarderItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(0.35f,0), new Keyframe(1,2)) },
-            { root+"SpiderItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(0.50f,0), new Keyframe(1,2)) },
-            { root+"ThumperItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(0.75f,0), new Keyframe(1,2)) },
-            { root+"CentipedeItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(0.25f,0), new Keyframe(1,3)) },
-        };
 
+        Dictionary<string, int> minBodyValues;
+        Dictionary<string, int> maxBodyValues;
+        Dictionary<string, float> bodyWeights;
+
+        Dictionary<string, AnimationCurve> bodyPaths;
         Dictionary<string,string> pathToName = new Dictionary<string, string>()
         {
             { root+"ScavItem.asset", "IgnoreThis" },
@@ -53,13 +52,24 @@ namespace CleaningCompany
         };
 
         public Dictionary<string, Item> BodySpawns = new Dictionary<string, Item>();
+        public List<GameObject> tools = new List<GameObject>();
 
         AssetBundle bundle;
         public Texture2D janitorMat;
         public static Plugin instance;
+        public AudioClip open, close;
+        public AudioClip zeroDays;
+        public AudioClip firedSFX;
+        public AudioClip introSFX;
+
+        public static PluginConfig cfg { get; private set; }
 
         void Awake()
         {
+            cfg = new(base.Config);
+            cfg.InitBindings();
+
+
             var types = Assembly.GetExecutingAssembly().GetTypes();
             foreach (var type in types)
             {
@@ -80,6 +90,13 @@ namespace CleaningCompany
             bundle = AssetBundle.LoadFromFile(assetDir);
             janitorMat = bundle.LoadAsset<Texture2D>("Assets/CleaningAssets/JanitorOutfit.png");
 
+            open =  bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/open.ogg");
+            close =  bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/close.ogg");
+            zeroDays =  bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/VA/zeroDays.mp3");
+            firedSFX =  bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/VA/fired.mp3");
+            introSFX =  bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/VA/intro.mp3");
+
+            ApplyConfig();
             SetupItems();
             SetupScrap();
 
@@ -88,6 +105,44 @@ namespace CleaningCompany
             Logger.LogInfo(string.Join(", ",BodySpawns.Keys));
         }
 
+        void ApplyConfig()
+        {
+            bodyWeights = new Dictionary<string, float>()
+            {
+                { root+"ScavItem.asset", cfg.SCAV_WEIGHT },
+                { root+"HoarderItem.asset", cfg.HOARDER_WEIGHT },
+                { root+"SpiderItem.asset", cfg.SPIDER_WEIGHT },
+                { root+"ThumperItem.asset", cfg.THUMPER_WEIGHT },
+                { root+"CentipedeItem.asset", cfg.CENTIPEDE_WEIGHT }
+            };
+
+            maxBodyValues = new Dictionary<string, int>()
+            {
+                { root+"ScavItem.asset", cfg.SCAV_MAX },
+                { root+"HoarderItem.asset", cfg.HOARDER_MAX },
+                { root+"SpiderItem.asset", cfg.SPIDER_MAX },
+                { root+"ThumperItem.asset", cfg.THUMPER_MAX },
+                { root+"CentipedeItem.asset", cfg.CENTIPEDE_MAX }
+            };
+
+            minBodyValues = new Dictionary<string, int>()
+            {
+                { root+"ScavItem.asset", cfg.SCAV_MIN },
+                { root+"HoarderItem.asset", cfg.HOARDER_MIN },
+                { root+"SpiderItem.asset", cfg.SPIDER_MIN },
+                { root+"ThumperItem.asset", cfg.THUMPER_MIN },
+                { root+"CentipedeItem.asset", cfg.CENTIPEDE_MIN }
+            };
+
+            bodyPaths = new Dictionary<string, AnimationCurve>()
+            {
+                { root+"ScavItem.asset", new AnimationCurve(new Keyframe(0,1), new Keyframe(cfg.SCAV_CURVE,0), new Keyframe(1,cfg.MAX_SCAVS)) },
+                { root+"HoarderItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(cfg.HOARDER_CURVE,0), new Keyframe(1,cfg.MAX_HOARDERS)) },
+                { root+"SpiderItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(cfg.SPIDER_CURVE,0), new Keyframe(1,cfg.MAX_SPIDERS)) },
+                { root+"ThumperItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(cfg.THUMPER_CURVE,0), new Keyframe(1,cfg.MAX_THUMPERS)) },
+                { root+"CentipedeItem.asset", new AnimationCurve(new Keyframe(0,0), new Keyframe(cfg.CENTIPEDE_CURVE,0), new Keyframe(1,cfg.MAX_CENTIPEDES)) },
+            };
+        }
 
         void SetupItems() // this could go in a for loop but I mean it's not getting any bigger
         {
@@ -95,68 +150,77 @@ namespace CleaningCompany
             Item mop = bundle.LoadAsset<Item>("Assets/CleaningAssets/MopItem.asset");
             ToolItem tool = mop.spawnPrefab.AddComponent<ToolItem>();
             mop.itemSpawnsOnGround = true;
+            mop.canBeGrabbedBeforeGameStart = true;
             tool.toolType = "mop";
             tool.grabbable = true;
             tool.grabbableToEnemies = true;
             tool.itemProperties = mop;
+            Items.RegisterItem(mop);
 
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(mop.spawnPrefab);
-            TerminalNode node = ScriptableObject.CreateInstance<TerminalNode>();
-            node.displayText = "You need this to clean up wet messes.\n\n";
-            Items.RegisterShopItem(mop, null, null, node, 0);
+            tools.Add(mop.spawnPrefab);
 
             //broom
             Item broom = bundle.LoadAsset<Item>("Assets/CleaningAssets/BroomItem.asset");
             ToolItem broomTool = broom.spawnPrefab.AddComponent<ToolItem>();
             broom.itemSpawnsOnGround = true;
+            broom.canBeGrabbedBeforeGameStart = true;
             broomTool.toolType = "broom";
             broomTool.grabbable = true;
             broomTool.grabbableToEnemies = true;
             broomTool.itemProperties = broom;
+            Items.RegisterItem(broom);
 
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(broom.spawnPrefab);
-            TerminalNode broomNode = ScriptableObject.CreateInstance<TerminalNode>();
-            broomNode.displayText = "You need this to clean up loose messes.\n\n";
-            Items.RegisterShopItem(broom, null, null, broomNode, 0);
+            tools.Add(broom.spawnPrefab);
 
             //garbage bag box
             Item garb = bundle.LoadAsset<Item>("Assets/CleaningAssets/GarbageBox.asset");
             ToolItem garbTool = garb.spawnPrefab.AddComponent<ToolItem>();
             garb.itemSpawnsOnGround = true;
+            garb.canBeGrabbedBeforeGameStart = true;
             garbTool.toolType = "garbage";
             garbTool.grabbable = true;
             garbTool.grabbableToEnemies = true;
             garbTool.itemProperties = garb;
+            Items.RegisterItem(garb);
 
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(garb.spawnPrefab);
-            TerminalNode garbNode = ScriptableObject.CreateInstance<TerminalNode>();
-            garbNode.displayText = "You need this to clean up piles of solid objects.\n\n";
-            Items.RegisterShopItem(garb, null, null, garbNode, 0);
+            tools.Add(garb.spawnPrefab);
 
             //duster // this is actually gonna be a vauum now
             Item dust = bundle.LoadAsset<Item>("Assets/CleaningAssets/DusterItem.asset");
             ToolItem dustTool = dust.spawnPrefab.AddComponent<ToolItem>();
+            dust.canBeGrabbedBeforeGameStart = true;
             dust.itemSpawnsOnGround = true;
             dustTool.toolType = "vacuum";
             dustTool.grabbable = true;
             dustTool.grabbableToEnemies = true;
             dustTool.itemProperties = dust;
+            Items.RegisterItem(dust);
 
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(dust.spawnPrefab);
-            TerminalNode dustNode = ScriptableObject.CreateInstance<TerminalNode>();
-            dustNode.displayText = "You need this to clean up small piles of fine dust.\n\n";
-            Items.RegisterShopItem(dust, null, null, dustNode, 0);
+            tools.Add(dust.spawnPrefab);
+
+            // cleaning cabinet
+            UnlockablesList list = bundle.LoadAsset<UnlockablesList>("Assets/CleaningAssets/TestUnlocks.asset");
+            list.unlockables[0].prefabObject.AddComponent<CabinetScript>();
+            LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(list.unlockables[0].prefabObject);
+            Unlockables.RegisterUnlockable(list.unlockables[0],0,StoreType.None);
         }
 
         void SetupScrap()
         {
             Dictionary<string, AudioClip> sfx = new Dictionary<string, AudioClip>();
             AudioClip mopSound = bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/mop.mp3");
+            AudioClip vacSound = bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/vac.mp3");
+            AudioClip sweepSound = bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/sweep.mp3");
+            AudioClip garbSound = bundle.LoadAsset<AudioClip>("Assets/CleaningAssets/garb.mp3");
 
             sfx.Add("mop", mopSound);
-            sfx.Add("vacuum", mopSound);
-            sfx.Add("broom", mopSound);
-            sfx.Add("garbage", mopSound);
+            sfx.Add("vacuum", vacSound);
+            sfx.Add("broom", sweepSound);
+            sfx.Add("garbage", garbSound);
 
             Dictionary<string, Item> trash = new Dictionary<string, Item>();
             Item trashBag = bundle.LoadAsset<Item>("Assets/CleaningAssets/GarbageBagItem.asset");
@@ -178,6 +242,8 @@ namespace CleaningCompany
                 mess.loot = trash[bundleData.Value].spawnPrefab;
                 mess.toolType = bundleData.Value;
                 mess.cleanNoise = sfx[bundleData.Value];
+                item.maxValue = cfg.TRASH_MAX;
+                item.minValue = cfg.TRASH_MIN;
 
                 LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(item.spawnPrefab);
                 Items.RegisterScrap(item, 50, Levels.LevelTypes.All);
@@ -185,12 +251,16 @@ namespace CleaningCompany
                 {
                     BodySpawns.Add("Flowerman", item);
                 }
+                Items.RegisterShopItem(item, 0);
             }
 
             foreach(KeyValuePair<string, AnimationCurve> pair in bodyPaths)
             {
                 Item body = bundle.LoadAsset<Item>(pair.Key);
                 body.spawnPrefab.AddComponent<BodySyncer>();
+                body.maxValue = maxBodyValues[pair.Key];
+                body.minValue = minBodyValues[pair.Key];
+                body.weight = bodyWeights[pair.Key];
                 LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(body.spawnPrefab);
                 SpawnableMapObjectDef mapObjDef = ScriptableObject.CreateInstance<SpawnableMapObjectDef>();
                 mapObjDef.spawnableMapObject = new SpawnableMapObject();

@@ -2,6 +2,8 @@
 using HarmonyLib;
 using LethalLib.Modules;
 using System;
+using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 namespace CleaningCompany.Patches
@@ -30,20 +32,49 @@ namespace CleaningCompany.Patches
                 }
             }
             //change into janitor suit
-            foreach (UnlockableItem suit in __instance.unlockablesList.unlockables)
+            if (Plugin.cfg.JANITOR_SUIT)
             {
-                if (suit.suitMaterial != null && suit.alreadyUnlocked)
+                foreach (UnlockableItem suit in __instance.unlockablesList.unlockables)
                 {
-                    suit.suitMaterial.mainTexture = Plugin.instance.janitorMat;
-                    break;
+                    if (suit.suitMaterial != null && suit.alreadyUnlocked)
+                    {
+                        suit.suitMaterial.mainTexture = Plugin.instance.janitorMat;
+                        break;
+                    }
+                }
+                foreach (PlayerControllerB player in GameObject.FindObjectsOfType<PlayerControllerB>())
+                {
+                    player.thisPlayerModel.material.mainTexture = Plugin.instance.janitorMat;
+                    player.thisPlayerModelLOD1.material.mainTexture = Plugin.instance.janitorMat;
+                    player.thisPlayerModelLOD2.material.mainTexture = Plugin.instance.janitorMat;
+                    player.thisPlayerModelArms.material.mainTexture = Plugin.instance.janitorMat;
                 }
             }
-            foreach (PlayerControllerB player in GameObject.FindObjectsOfType<PlayerControllerB>())
+            if (Plugin.cfg.JANITOR_VA)
             {
-                player.thisPlayerModel.material.mainTexture = Plugin.instance.janitorMat;
-                player.thisPlayerModelLOD1.material.mainTexture = Plugin.instance.janitorMat;
-                player.thisPlayerModelLOD2.material.mainTexture = Plugin.instance.janitorMat;
-                player.thisPlayerModelArms.material.mainTexture = Plugin.instance.janitorMat;
+                __instance.StartCoroutine(SpawnCabinet(__instance));
+                __instance.zeroDaysLeftAlertSFX = Plugin.instance.zeroDays;
+                __instance.firedVoiceSFX = Plugin.instance.firedSFX;
+                __instance.shipIntroSpeechSFX = Plugin.instance.introSFX;
+            }
+        }
+        private static IEnumerator SpawnCabinet(StartOfRound __instance)
+        {
+            yield return new WaitForSeconds(0.5f);
+            if (GameObject.Find("TestCabinet(Clone)") == null)
+            {
+                GameObject cabinet = null;
+                foreach (UnlockableItem unlockable in __instance.unlockablesList.unlockables)
+                {
+                    if (unlockable.unlockableName == "Cleaning Cabinet")
+                    {
+                        cabinet = unlockable.prefabObject;
+                        break;
+                    }
+                }
+                GameObject terminal = GameObject.Find("Terminal");
+                GameObject cab = GameObject.Instantiate(cabinet, terminal.transform.parent);
+                cab.GetComponent<NetworkObject>().Spawn();
             }
         }
     }

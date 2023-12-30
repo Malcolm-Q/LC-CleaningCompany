@@ -1,4 +1,5 @@
 ﻿using GameNetcodeStuff;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace CleaningCompany.Monos
         InteractTrigger trig;
         AudioSource audio;
         public AudioClip cleanNoise;
+        int cleaning = 0;
 
         void Awake()
         {
@@ -46,12 +48,26 @@ namespace CleaningCompany.Monos
             }
             if (tool.toolType == toolType) trig.interactable = true;
             else trig.interactable = false;
+            anim.SetInteger("CleanStatus",cleaning);
+            if(cleaning == 1)
+            {
+                if (!audio.isPlaying)
+                {
+                    audio.Play();
+                }
+            }
+            else
+            {
+                if (audio.isPlaying)
+                {
+                    audio.Stop();
+                }
+            }
         }
 
 
         void CleanMess(PlayerControllerB player)
         {
-            Debug.Log("Clean");
             SpawnLootServerRpc();
             audio.Stop();
             audio.volume = 0f;
@@ -59,23 +75,20 @@ namespace CleaningCompany.Monos
 
         void StopMess(PlayerControllerB player)
         {
-            Debug.Log("Stopping");
-                anim.SetTrigger("Cleaning");
-            anim.SetTrigger("Idle");
-            audio.Pause();
+            if(!IsOwner)
+            {
+                GetComponent<NetworkObject>().ChangeOwnership(player.actualClientId);
+            }
+            cleaning = 0;
         }
 
         void PlayMess(PlayerControllerB player)
         {
-            Debug.Log(anim.GetCurrentAnimatorStateInfo(0));
-            if (!anim.GetCurrentAnimatorStateInfo(0).IsName("Cleaning"))
+            if(!IsOwner)
             {
-                anim.SetTrigger("Cleaning");
+                GetComponent<NetworkObject>().ChangeOwnership(player.actualClientId);
             }
-            if (!audio.isPlaying)
-            {
-                audio.Play();
-            }
+            cleaning = 1;
         }
 
         [ServerRpc(RequireOwnership = false)]
