@@ -1,6 +1,7 @@
 ![LCUCLogo2](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/b915165d-783f-4651-a0f9-beab78ac2b34)
 # A Lethal Company Overhaul for [Naidaru's 2023 LC Mod Jam](https://itch.io/jam/2023-lethal-company-modjam)
 ### ***MAKE THE COMPANY ~~PROUD~~ PRETTY***
+[Watch the trailer thing on YouTube](https://www.youtube.com/watch?v=D114x5YyH2M)  
 
 As a long standing employee for ***THE COMPANY*** it's only fit that you be promoted to a highly skilled janitorial taskforce burdened with cleaning up after amateur scavengers so ***THE COMPANY*** remains operating within its regulations.  
 **Getting scrap is easy; it's hard making it look like nothing happened.**
@@ -29,6 +30,7 @@ As a long standing employee for ***THE COMPANY*** it's only fit that you be prom
 
 ## Screenshots
 ![image](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/1b94dd96-3ded-4070-89fa-47a1498621d1)
+![spider](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/0a31f6b0-ffa2-44dd-899c-326275f067dd)
 ![image](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/7f2048f5-b7f9-49cb-a04f-0281abac2579)
 ![image](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/b355c394-030b-410c-b050-ed5abf1f3229)
 ![image](https://github.com/Malcolm-Q/LC-CleaningCompany/assets/118214091/6d827b75-2765-4066-a3a0-bef51e769b03)
