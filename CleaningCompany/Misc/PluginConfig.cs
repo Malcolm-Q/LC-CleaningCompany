@@ -46,6 +46,8 @@ namespace CleaningCompany.Misc
         // trash value
         public int TRASH_MIN {  get; set; }
         public int TRASH_MAX {  get; set; }
+        public bool SCRAP_SPAWN { get; set; }
+        public int MESS_RARITY { get; set; }
 
 
 
@@ -96,6 +98,9 @@ namespace CleaningCompany.Misc
             TRASH_MIN = ConfigEntry("Trash Value", "Min price of trash", 20, "");
             TRASH_MAX = ConfigEntry("Trash Value", "Max price of trash", 70, "");
 
+
+            SCRAP_SPAWN = ConfigEntry("Scrap", "Spawn regular scrap", false, "");
+            MESS_RARITY = ConfigEntry("Scrap", "Mess rarity", 50, "Higher means it has a higher chance of spawning. if the above option is false this doesn't matter.");
         }
     }
 }

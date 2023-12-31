@@ -1,5 +1,4 @@
 ﻿using GameNetcodeStuff;
-using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -75,19 +74,11 @@ namespace CleaningCompany.Monos
 
         void StopMess(PlayerControllerB player)
         {
-            if(!IsOwner)
-            {
-                GetComponent<NetworkObject>().ChangeOwnership(player.actualClientId);
-            }
             cleaning = 0;
         }
 
         void PlayMess(PlayerControllerB player)
         {
-            if(!IsOwner)
-            {
-                GetComponent<NetworkObject>().ChangeOwnership(player.actualClientId);
-            }
             cleaning = 1;
         }
 

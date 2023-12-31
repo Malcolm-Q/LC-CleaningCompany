@@ -1,5 +1,6 @@
 ﻿
 using GameNetcodeStuff;
+using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -67,8 +68,15 @@ namespace CleaningCompany.Monos
         void SpawnToolServerRpc(int toolID, Vector3 pos)
         {
             GameObject go = Instantiate(Plugin.instance.tools[toolID],pos,Quaternion.identity);
-            go.transform.parent = transform.parent;
-            go.GetComponent<NetworkObject>().Spawn();
+            NetworkObject netObj = go.GetComponent<NetworkObject>();
+            netObj.Spawn();
+            StartCoroutine(setParentToShip(netObj));
+        }
+
+        IEnumerator setParentToShip(NetworkObject netObj)
+        {
+            yield return new WaitForSeconds(0.5f);
+            netObj.TrySetParent(transform.parent);
         }
 
         void ChangeLeftDoorState(PlayerControllerB player)

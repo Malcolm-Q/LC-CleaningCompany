@@ -15,18 +15,21 @@ namespace CleaningCompany.Patches
         [HarmonyPatch("Awake")]
         static void RemoveScrap(StartOfRound __instance)
         {
-            foreach (SelectableLevel level in __instance.levels) //prevent all scrap ffrom spawning
+            if (!Plugin.cfg.SCRAP_SPAWN)
             {
-                var name = level.name;
-
-                if (Enum.IsDefined(typeof(Levels.LevelTypes), name))
+                foreach (SelectableLevel level in __instance.levels) //prevent all scrap ffrom spawning
                 {
-                    var levelEnum = (Levels.LevelTypes)Enum.Parse(typeof(Levels.LevelTypes), name);
-                    foreach (SpawnableItemWithRarity item in level.spawnableScrap)
+                    var name = level.name;
+
+                    if (Enum.IsDefined(typeof(Levels.LevelTypes), name))
                     {
-                        if (item.spawnableItem.isScrap)
+                        var levelEnum = (Levels.LevelTypes)Enum.Parse(typeof(Levels.LevelTypes), name);
+                        foreach (SpawnableItemWithRarity item in level.spawnableScrap)
                         {
-                            item.rarity = 0;
+                            if (item.spawnableItem.isScrap)
+                            {
+                                item.rarity = 0;
+                            }
                         }
                     }
                 }
@@ -52,11 +55,11 @@ namespace CleaningCompany.Patches
             }
             if (Plugin.cfg.JANITOR_VA)
             {
-                __instance.StartCoroutine(SpawnCabinet(__instance));
                 __instance.zeroDaysLeftAlertSFX = Plugin.instance.zeroDays;
                 __instance.firedVoiceSFX = Plugin.instance.firedSFX;
                 __instance.shipIntroSpeechSFX = Plugin.instance.introSFX;
             }
+            __instance.StartCoroutine(SpawnCabinet(__instance));
         }
         private static IEnumerator SpawnCabinet(StartOfRound __instance)
         {

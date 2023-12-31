@@ -149,6 +149,7 @@ namespace CleaningCompany
             //mop
             Item mop = bundle.LoadAsset<Item>("Assets/CleaningAssets/MopItem.asset");
             ToolItem tool = mop.spawnPrefab.AddComponent<ToolItem>();
+            mop.spawnPrefab.AddComponent<AudioMixerFixer>();
             mop.itemSpawnsOnGround = true;
             mop.canBeGrabbedBeforeGameStart = true;
             tool.toolType = "mop";
@@ -163,6 +164,7 @@ namespace CleaningCompany
             //broom
             Item broom = bundle.LoadAsset<Item>("Assets/CleaningAssets/BroomItem.asset");
             ToolItem broomTool = broom.spawnPrefab.AddComponent<ToolItem>();
+            broom.spawnPrefab.AddComponent<AudioMixerFixer>();
             broom.itemSpawnsOnGround = true;
             broom.canBeGrabbedBeforeGameStart = true;
             broomTool.toolType = "broom";
@@ -177,6 +179,7 @@ namespace CleaningCompany
             //garbage bag box
             Item garb = bundle.LoadAsset<Item>("Assets/CleaningAssets/GarbageBox.asset");
             ToolItem garbTool = garb.spawnPrefab.AddComponent<ToolItem>();
+            garb.spawnPrefab.AddComponent<AudioMixerFixer>();
             garb.itemSpawnsOnGround = true;
             garb.canBeGrabbedBeforeGameStart = true;
             garbTool.toolType = "garbage";
@@ -191,6 +194,7 @@ namespace CleaningCompany
             //duster // this is actually gonna be a vauum now
             Item dust = bundle.LoadAsset<Item>("Assets/CleaningAssets/DusterItem.asset");
             ToolItem dustTool = dust.spawnPrefab.AddComponent<ToolItem>();
+            dust.spawnPrefab.AddComponent<AudioMixerFixer>();
             dust.canBeGrabbedBeforeGameStart = true;
             dust.itemSpawnsOnGround = true;
             dustTool.toolType = "vacuum";
@@ -205,6 +209,7 @@ namespace CleaningCompany
             // cleaning cabinet
             UnlockablesList list = bundle.LoadAsset<UnlockablesList>("Assets/CleaningAssets/TestUnlocks.asset");
             list.unlockables[0].prefabObject.AddComponent<CabinetScript>();
+            list.unlockables[0].prefabObject.AddComponent<AudioMixerFixer>();
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(list.unlockables[0].prefabObject);
             Unlockables.RegisterUnlockable(list.unlockables[0],0,StoreType.None);
         }
@@ -224,7 +229,9 @@ namespace CleaningCompany
 
             Dictionary<string, Item> trash = new Dictionary<string, Item>();
             Item trashBag = bundle.LoadAsset<Item>("Assets/CleaningAssets/GarbageBagItem.asset");
+            trashBag.spawnPrefab.AddComponent<AudioMixerFixer>();
             Item bucket = bundle.LoadAsset<Item>("Assets/CleaningAssets/BucketItem.asset");
+            bucket.spawnPrefab.AddComponent<AudioMixerFixer>();
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(trashBag.spawnPrefab);
             LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(bucket.spawnPrefab);
 
@@ -237,6 +244,7 @@ namespace CleaningCompany
             foreach(KeyValuePair<string,string> bundleData in messPaths)
             {
                 Item item = bundle.LoadAsset<Item>(bundleData.Key);
+                item.spawnPrefab.AddComponent<AudioMixerFixer>();
                 MessItem mess = item.spawnPrefab.AddComponent<MessItem>();
 
                 mess.loot = trash[bundleData.Value].spawnPrefab;
@@ -246,17 +254,17 @@ namespace CleaningCompany
                 item.minValue = cfg.TRASH_MIN;
 
                 LethalLib.Modules.NetworkPrefabs.RegisterNetworkPrefab(item.spawnPrefab);
-                Items.RegisterScrap(item, 50, Levels.LevelTypes.All);
+                Items.RegisterScrap(item, Plugin.cfg.MESS_RARITY, Levels.LevelTypes.All);
                 if (bundleData.Key.Contains("Bracken"))
                 {
                     BodySpawns.Add("Flowerman", item);
                 }
-                Items.RegisterShopItem(item, 0);
             }
 
             foreach(KeyValuePair<string, AnimationCurve> pair in bodyPaths)
             {
                 Item body = bundle.LoadAsset<Item>(pair.Key);
+                body.spawnPrefab.AddComponent<AudioMixerFixer>();
                 body.spawnPrefab.AddComponent<BodySyncer>();
                 body.maxValue = maxBodyValues[pair.Key];
                 body.minValue = minBodyValues[pair.Key];

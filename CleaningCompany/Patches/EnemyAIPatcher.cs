@@ -15,11 +15,8 @@ namespace CleaningCompany.Patches
             if (currentEnemy == __instance.NetworkObject.NetworkObjectId) return;
             currentEnemy = __instance.NetworkObject.NetworkObjectId;
             string name = __instance.enemyType.enemyName;
-            Debug.Log(name);
-            Debug.Log(string.Join(", ",Plugin.instance.BodySpawns.Keys));
             if (Plugin.instance.BodySpawns.ContainsKey(name))
             {
-                Debug.Log("SPAWN");
                 GameObject go = GameObject.Instantiate(Plugin.instance.BodySpawns[name].spawnPrefab, __instance.transform.position + Vector3.up, Quaternion.identity);
                 go.GetComponent<NetworkObject>().Spawn();
                 __instance.gameObject.SetActive(false);
